@@ -4,6 +4,10 @@ init:
 
 build: off
 
+environment:
+  GITHUB_ACCESS_TOKEN:
+    secure: 2GfPxgGBKuqQGfnTEuYxqMbS97ohi0o5fxlc70ihcv5ey6FJhVhWCpOrPxlekrbO
+
 # appveyor.yml
 install:
   - set PATH=C:\Ruby22\bin;%PATH%
