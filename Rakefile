@@ -67,8 +67,9 @@ task :unzip_package do
   require 'pathname'
   puts "Unzipping #{LOCAL_PACKAGE_LOCATION}"
   Zip::File.open(LOCAL_PACKAGE_LOCATION) do |zip_file|
+    puts "Unzipped file"
     zip_file.each do |entry|
-      puts "Extracting #{File.join("tmp", entry.name)}"
+      puts "Extracting #{entry.name}"
       entry.extract(File.join("tmp", entry.name))
     end
   end
