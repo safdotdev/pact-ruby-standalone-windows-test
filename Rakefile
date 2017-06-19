@@ -46,45 +46,45 @@ class DownloadReleaseAsset
     end
 
     puts "Writing file #{file_path}"
-    File.open(file_path, "w") { |file| file << response.body }
-    puts "Finished writing file #{file_path}"
-  end
-end
-
-class DownloadReleaseAsset
-  def self.call url, file_path
-    require "net/https"
-    require "uri"
-
-    uri = URI.parse(url)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-
-    request = Net::HTTP::Get.new(uri.request_uri)
-    request['Accept'] = 'application/octet-stream'
-    request['Authorization'] = "token #{ENV.fetch('GITHUB_ACCESS_TOKEN')}"
-    response = http.request(request)
-    location = response["Location"]
-    puts "Location is #{location}"
-    puts "Headers #{response.to_hash}"
-    puts response.body
-
-    uri = URI.parse(location)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-    request = Net::HTTP::Get.new(uri.request_uri)
-    response = http.request(request)
-    puts "Response 2 #{response.to_hash}"
-    puts "Writing file #{file_path}"
     File.open(file_path, "wb") { |file| file << response.body }
     puts "Finished writing file #{file_path}"
-  rescue StandardError => e
-    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
-    raise e
   end
 end
+
+# class DownloadReleaseAsset
+#   def self.call url, file_path
+#     require "net/https"
+#     require "uri"
+
+#     uri = URI.parse(url)
+#     http = Net::HTTP.new(uri.host, uri.port)
+#     http.use_ssl = true
+#     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+#     request = Net::HTTP::Get.new(uri.request_uri)
+#     request['Accept'] = 'application/octet-stream'
+#     request['Authorization'] = "token #{ENV.fetch('GITHUB_ACCESS_TOKEN')}"
+#     response = http.request(request)
+#     location = response["Location"]
+#     puts "Location is #{location}"
+#     puts "Headers #{response.to_hash}"
+#     puts response.body
+
+#     uri = URI.parse(location)
+#     http = Net::HTTP.new(uri.host, uri.port)
+#     http.use_ssl = true
+#     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+#     request = Net::HTTP::Get.new(uri.request_uri)
+#     response = http.request(request)
+#     puts "Response 2 #{response.to_hash}"
+#     puts "Writing file #{file_path}"
+#     File.open(file_path, "wb") { |file| file << response.body }
+#     puts "Finished writing file #{file_path}"
+#   rescue StandardError => e
+#     puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
+#     raise e
+#   end
+# end
 
 LOCAL_PACKAGE_LOCATION = "tmp/pact.zip"
 
@@ -106,9 +106,7 @@ task :unzip_package do
   puts "File readable? #{File.readable?(LOCAL_PACKAGE_LOCATION)}"
   begin
     Zip::File.open(LOCAL_PACKAGE_LOCATION) do |zip_file|
-      puts "Unzipped file"
       zip_file.each do |entry|
-        puts "Extracting #{entry.name}"
         entry.extract(File.join("tmp", entry.name))
       end
     end
@@ -119,24 +117,25 @@ task :unzip_package do
 end
 
 task :test do
-  require 'childprocess'
-  require 'faraday'
-  logger = Logger.new($stdout)
-  logger.level = Logger::INFO
-  ChildProcess.logger = logger
-  process = ChildProcess.build("./pact-mock-service.bat", "service", "-p", "1234")
-
-  process.cwd = "tmp/pact/bin"
-  process.io.inherit!
-
+  process = nil
   begin
+    require 'childprocess'
+    require 'faraday'
+    logger = Logger.new($stdout)
+    logger.level = Logger::INFO
+    ChildProcess.logger = logger
+    process = ChildProcess.build("./pact-mock-service.bat", "service", "-p", "1234")
+
+    process.cwd = "tmp/pact/bin"
+    process.io.inherit!
+
     process.start
     sleep 3
 
     response = Faraday.get("http://localhost:1234", nil, {'X-Pact-Mock-Service' => 'true'})
     raise "#{response.status} #{response.body}" unless response.status == 200
   ensure
-    process.stop
+    process.stop if process && process.alive?
   end
 end
 
