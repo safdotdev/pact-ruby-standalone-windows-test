@@ -19,6 +19,7 @@ class GetLatestReleaseAssetUrl
     repository_slug = 'pact-foundation/pact-ruby-standalone'
 
     client = Octokit::Client.new(access_token: access_token)
+    client.connection_options[:ssl] = { :verify => false } #TEMP!!!
     release =  client.latest_release repository_slug
     release_assets = client.release_assets release.url
     zip = release_assets.find { | release_asset | release_asset.name =~ release_asset_name_regexp }
@@ -33,7 +34,8 @@ class DownloadReleaseAsset
     require 'faraday'
     require 'faraday_middleware'
 
-    faraday = Faraday.new(:url => url) do |faraday|
+    #TEMP!!! Must turn on verification again
+    faraday = Faraday.new(:url => url, :ssl => {verify: false}) do |faraday|
       faraday.use FaradayMiddleware::FollowRedirects
       faraday.adapter Faraday.default_adapter
       faraday.response :logger
