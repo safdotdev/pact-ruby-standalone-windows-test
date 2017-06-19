@@ -110,6 +110,7 @@ task :unzip_package do
         entry.extract(File.join("tmp", entry.name))
       end
     end
+    puts "Finished unzipping file"
   rescue Exception => e
     puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
     raise e
@@ -134,6 +135,9 @@ task :test do
 
     response = Faraday.get("http://localhost:1234", nil, {'X-Pact-Mock-Service' => 'true'})
     raise "#{response.status} #{response.body}" unless response.status == 200
+  rescue Exception => e
+    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
+    raise e
   ensure
     process.stop if process && process.alive?
   end
