@@ -63,6 +63,7 @@ class DownloadReleaseAsset
 
     request = Net::HTTP::Get.new(uri.request_uri)
     request['Accept'] = 'application/octet-stream'
+    request['Authorization'] = "token #{ENV.fetch('GITHUB_ACCESS_TOKEN')}"
     response = http.request(request)
     location = response["Location"]
     puts "Location is #{location}"
@@ -74,6 +75,7 @@ class DownloadReleaseAsset
     http.use_ssl = true
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
     request = Net::HTTP::Get.new(uri.request_uri)
+    request['Authorization'] = "token #{ENV.fetch('GITHUB_ACCESS_TOKEN')}"
     response = http.request(request)
     puts "Response 2 #{response.to_hash}"
     puts "Writing file #{file_path}"
