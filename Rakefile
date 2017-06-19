@@ -76,6 +76,9 @@ class DownloadReleaseAsset
     puts "Writing file #{file_path}"
     File.open(file_path, "w") { |file| file << response.body }
     puts "Finished writing file #{file_path}"
+  rescue StandardError => e
+    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
+    raise e
   end
 end
 
