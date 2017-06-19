@@ -45,7 +45,9 @@ class DownloadReleaseAsset
       request.headers['Accept'] = 'application/octet-stream'
     end
 
+    puts "Writing file #{file_path}"
     File.open(file_path, "w") { |file| file << response.body }
+    puts "Finished writing file #{file_path}"
   end
 end
 
