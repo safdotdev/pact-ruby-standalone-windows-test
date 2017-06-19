@@ -125,7 +125,7 @@ task :test do
     logger = Logger.new($stdout)
     logger.level = Logger::INFO
     ChildProcess.logger = logger
-    process = ChildProcess.build("./pact-mock-service.bat", "service", "-p", "1234")
+    process = ChildProcess.build("cmd.exe", "/c", ".\\pact-mock-service.bat", "service", "-p", "1234")
 
     process.cwd = "tmp/pact/bin"
     process.io.inherit!
