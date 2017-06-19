@@ -51,6 +51,34 @@ class DownloadReleaseAsset
   end
 end
 
+class DownloadReleaseAsset
+  def self.call url, file_path
+    require "net/https"
+    require "uri"
+
+    uri = URI.parse(url)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    request = Net::HTTP::Get.new(uri.request_uri)
+    request['Accept'] = 'application/octet-stream'
+    response = http.request(request)
+    location = response["Location"]
+
+    uri = URI.parse(location)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    request = Net::HTTP::Get.new(uri.request_uri)
+    response = http.request(request)
+
+    puts "Writing file #{file_path}"
+    File.open(file_path, "w") { |file| file << response.body }
+    puts "Finished writing file #{file_path}"
+  end
+end
+
 LOCAL_PACKAGE_LOCATION = "tmp/pact.zip"
 
 desc 'Download latest pact-X.X.X-win32.zip'
