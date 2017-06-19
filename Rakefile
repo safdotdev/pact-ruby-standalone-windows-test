@@ -58,7 +58,7 @@ task :download_latest_release do |t, args |
   require 'fileutils'
   FileUtils.mkdir_p "tmp"
 
-  url = GetLatestReleaseAssetUrl.call /zip/
+  url = GetLatestReleaseAssetUrl.call /win.*zip/
   DownloadReleaseAsset.call(url, LOCAL_PACKAGE_LOCATION)
 end
 
