@@ -66,6 +66,9 @@ task :unzip_package do
   require 'zip'
   require 'pathname'
   puts "Unzipping #{LOCAL_PACKAGE_LOCATION}"
+  puts "File exists? #{File.exist?(LOCAL_PACKAGE_LOCATION)}"
+  puts "File size #{File.size(LOCAL_PACKAGE_LOCATION)}"
+  puts "File readable? #{File.readable?(LOCAL_PACKAGE_LOCATION)}"
   begin
     Zip::File.open(LOCAL_PACKAGE_LOCATION) do |zip_file|
       puts "Unzipped file"
