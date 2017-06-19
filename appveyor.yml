@@ -1,0 +1,18 @@
+# fix lineendings in Windows
+init:
+  - git config --global core.autocrlf input
+
+build: off
+
+# appveyor.yml
+install:
+  - set PATH=C:\Ruby22\bin;%PATH%
+  - bundle install
+
+before_test:
+  - ruby -v
+  - gem -v
+  - bundle -v
+
+test_script:
+  - bundle exec rake
