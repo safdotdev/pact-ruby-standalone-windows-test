@@ -65,6 +65,9 @@ class DownloadReleaseAsset
     request['Accept'] = 'application/octet-stream'
     response = http.request(request)
     location = response["Location"]
+    puts "Location is #{location}"
+    puts "Headers #{response.to_hash}"
+    puts response.body
 
     uri = URI.parse(location)
     http = Net::HTTP.new(uri.host, uri.port)
@@ -72,7 +75,7 @@ class DownloadReleaseAsset
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
     request = Net::HTTP::Get.new(uri.request_uri)
     response = http.request(request)
-
+    puts "Response 2 #{response.to_hash}"
     puts "Writing file #{file_path}"
     File.open(file_path, "w") { |file| file << response.body }
     puts "Finished writing file #{file_path}"
