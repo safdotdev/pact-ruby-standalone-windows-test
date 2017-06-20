@@ -1,172 +1,128 @@
-task :default do
-  puts "Hello world"
-end
-
-class GetLatestReleaseAssetUrl
-
-  def self.call release_asset_name_regexp
-    require 'octokit'
-    stack = Faraday::RackBuilder.new do |builder|
-      builder.response :logger do | logger |
-        logger.filter(/(Authorization: )(.*)/,'\1[REMOVED]')
-      end
-      builder.use Octokit::Response::RaiseError
-      builder.adapter Faraday.default_adapter
-    end
-    Octokit.middleware = stack
-
-    access_token = ENV.fetch('GITHUB_ACCESS_TOKEN')
-    repository_slug = 'pact-foundation/pact-ruby-standalone'
-
-    client = Octokit::Client.new(access_token: access_token)
-    client.connection_options[:ssl] = { :verify => false } #TEMP!!!
-    release =  client.latest_release repository_slug
-    release_assets = client.release_assets release.url
-    zip = release_assets.find { | release_asset | release_asset.name =~ release_asset_name_regexp }
-    zip.url
-  end
-
-end
-
-class DownloadReleaseAsset
-
-  def self.call url, file_path
-    require 'faraday'
-    require 'faraday_middleware'
-
-    #TEMP!!! Must turn on verification again
-    faraday = Faraday.new(:url => url, :ssl => {verify: false}) do |faraday|
-      faraday.use FaradayMiddleware::FollowRedirects
-      faraday.adapter Faraday.default_adapter
-      faraday.response :logger
-    end
-
-    response = faraday.get do | request |
-      request.headers['Accept'] = 'application/octet-stream'
-    end
-
-    puts "Writing file #{file_path}"
-    File.open(file_path, "wb") { |file| file << response.body }
-    puts "Finished writing file #{file_path}"
-  end
-end
-
-# class DownloadReleaseAsset
-#   def self.call url, file_path
-#     require "net/https"
-#     require "uri"
-
-#     uri = URI.parse(url)
-#     http = Net::HTTP.new(uri.host, uri.port)
-#     http.use_ssl = true
-#     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-
-#     request = Net::HTTP::Get.new(uri.request_uri)
-#     request['Accept'] = 'application/octet-stream'
-#     request['Authorization'] = "token #{ENV.fetch('GITHUB_ACCESS_TOKEN')}"
-#     response = http.request(request)
-#     location = response["Location"]
-#     puts "Location is #{location}"
-#     puts "Headers #{response.to_hash}"
-#     puts response.body
-
-#     uri = URI.parse(location)
-#     http = Net::HTTP.new(uri.host, uri.port)
-#     http.use_ssl = true
-#     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-#     request = Net::HTTP::Get.new(uri.request_uri)
-#     response = http.request(request)
-#     puts "Response 2 #{response.to_hash}"
-#     puts "Writing file #{file_path}"
-#     File.open(file_path, "wb") { |file| file << response.body }
-#     puts "Finished writing file #{file_path}"
-#   rescue StandardError => e
-#     puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
-#     raise e
-#   end
-# end
-
 LOCAL_PACKAGE_LOCATION = "tmp/pact.zip"
+
+def windows?
+  (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
+end
+
+def github_access_token
+  ENV.fetch('GITHUB_ACCESS_TOKEN')
+end
+
+def get_latest_release_asset_url release_asset_name_regexp
+  require 'octokit'
+  stack = Faraday::RackBuilder.new do |builder|
+    builder.response :logger do | logger |
+      logger.filter(/(Authorization: )(.*)/,'\1[REMOVED]')
+    end
+    builder.use Octokit::Response::RaiseError
+    builder.adapter Faraday.default_adapter
+  end
+  Octokit.middleware = stack
+
+  repository_slug = 'pact-foundation/pact-ruby-standalone'
+
+  client = Octokit::Client.new(access_token: github_access_token)
+  client.connection_options[:ssl] = { :verify => false } #TEMP!!!
+  release =  client.latest_release repository_slug
+  release_assets = client.release_assets release.url
+  zip = release_assets.find { | release_asset | release_asset.name =~ release_asset_name_regexp }
+  zip.url
+end
+
+def download_release_asset url, file_path
+  require 'faraday'
+  require 'faraday_middleware'
+
+  #TEMP!!! Must turn on verification again
+  faraday = Faraday.new(:url => url, :ssl => {verify: false}) do |faraday|
+    faraday.use FaradayMiddleware::FollowRedirects
+    faraday.adapter Faraday.default_adapter
+    faraday.response :logger
+  end
+
+  response = faraday.get do | request |
+    request.headers['Accept'] = 'application/octet-stream'
+  end
+
+  puts "Writing file #{file_path}"
+  File.open(file_path, "wb") { |file| file << response.body }
+  puts "Finished writing file #{file_path}"
+end
+
+def unzip_package path
+  require 'zip'
+  require 'pathname'
+
+  puts "Unzipping #{path}"
+  Zip::File.open(path) do |zip_file|
+    zip_file.each do |entry|
+      entry.extract(File.join("tmp", entry.name))
+    end
+  end
+  puts "Finished unzipping #{path}"
+rescue Exception => e
+  puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
+  raise e
+end
+
+def build_process
+  require 'childprocess'
+
+  logger = Logger.new($stdout)
+  logger.level = Logger::INFO
+  ChildProcess.logger = logger
+  if windows?
+    process = ChildProcess.build("cmd.exe", "/c","pact-mock-service.bat", "service", "-p", "1235")
+    process.cwd = "tmp/pact/bin"
+    process.leader = true # not sure if we need this
+  else
+    # Manually downloaded and extracted, for local testing
+    process = ChildProcess.build("./pact-mock-service", "service", "-p", "1235")
+    process.cwd = "osx/pact/bin"
+  end
+
+  process.io.inherit!
+  process
+end
+
+def test_executable
+  require 'faraday'
+
+  process = build_process
+
+  Bundler.with_clean_env do
+    process.start
+  end
+  sleep 3
+
+  response = Faraday.get("http://localhost:1235", nil, {'X-Pact-Mock-Service' => 'true'})
+  puts response.body
+  raise "#{response.status} #{response.body}" unless response.status == 200
+rescue Exception => e
+  puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
+  raise e
+ensure
+  process.stop if process && process.alive?
+end
 
 desc 'Download latest pact-X.X.X-win32.zip'
 task :download_latest_release do |t, args |
   require 'fileutils'
+  FileUtils.rm_rf "tmp"
   FileUtils.mkdir_p "tmp"
 
-  url = GetLatestReleaseAssetUrl.call /win.*zip/
-  DownloadReleaseAsset.call(url, LOCAL_PACKAGE_LOCATION)
+  url = get_latest_release_asset_url /win.*zip/
+  download_release_asset url, LOCAL_PACKAGE_LOCATION
 end
 
+desc 'Unzip package'
 task :unzip_package do
-  require 'zip'
-  require 'pathname'
-  puts "Unzipping #{LOCAL_PACKAGE_LOCATION}"
-  puts "File exists? #{File.exist?(LOCAL_PACKAGE_LOCATION)}"
-  puts "File size #{File.size(LOCAL_PACKAGE_LOCATION)}"
-  puts "File readable? #{File.readable?(LOCAL_PACKAGE_LOCATION)}"
-  begin
-    Zip::File.open(LOCAL_PACKAGE_LOCATION) do |zip_file|
-      zip_file.each do |entry|
-        entry.extract(File.join("tmp", entry.name))
-      end
-    end
-    puts "Finished unzipping file"
-  rescue Exception => e
-    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
-    raise e
-  end
+  unzip_package LOCAL_PACKAGE_LOCATION
 end
 
+desc 'Test windows batch file'
 task :test do
-  process = nil
-  begin
-    require 'childprocess'
-    require 'faraday'
-    logger = Logger.new($stdout)
-    logger.level = Logger::INFO
-    ChildProcess.logger = logger
-    process = ChildProcess.build("cmd.exe", "/c","pact-mock-service.bat", "service", "-p", "1235")
-
-    process.leader = true
-    process.cwd = "tmp/pact/bin"
-    process.io.inherit!
-    Bundler.with_clean_env do
-      process.start
-	end
-	
-    sleep 3
-
-    response = Faraday.get("http://localhost:1235", nil, {'X-Pact-Mock-Service' => 'true'})
-    puts response.body
-	raise "#{response.status} #{response.body}" unless response.status == 200
-  rescue Exception => e
-    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
-    raise e
-  ensure
-    process.stop if process && process.alive?
-  end
-end
-
-task :bethtest do
-  require 'childprocess'
-  require 'faraday'
-  logger = Logger.new($stdout)
-  logger.level = Logger::INFO
-  ChildProcess.logger = logger
-  process = ChildProcess.build("./pact-mock-service", "service", "-p", "1234")
-
-  process.cwd = "osx/pact/bin"
-  process.io.inherit!
-
-  begin
-    process.start
-    sleep 3
-
-    response = Faraday.get("http://localhost:1234", nil, {'X-Pact-Mock-Service' => 'true'})
-    raise "#{response.status} #{response.body}" unless response.status == 200
-  ensure
-    process.stop
-  end
+  test_executable
 end
 
 task :default => [:download_latest_release, :unzip_package, :test]
