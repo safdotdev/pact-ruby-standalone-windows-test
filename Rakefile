@@ -125,16 +125,20 @@ task :test do
     logger = Logger.new($stdout)
     logger.level = Logger::INFO
     ChildProcess.logger = logger
-    process = ChildProcess.build("cmd.exe", "/c", ".\\pact-mock-service.bat", "service", "-p", "1234")
+    process = ChildProcess.build("cmd.exe", "/c","pact-mock-service.bat", "service", "-p", "1235")
 
+    process.leader = true
     process.cwd = "tmp/pact/bin"
     process.io.inherit!
-
-    process.start
+    Bundler.with_clean_env do
+      process.start
+	end
+	
     sleep 3
 
-    response = Faraday.get("http://localhost:1234", nil, {'X-Pact-Mock-Service' => 'true'})
-    raise "#{response.status} #{response.body}" unless response.status == 200
+    response = Faraday.get("http://localhost:1235", nil, {'X-Pact-Mock-Service' => 'true'})
+    puts response.body
+	raise "#{response.status} #{response.body}" unless response.status == 200
   rescue Exception => e
     puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
     raise e
