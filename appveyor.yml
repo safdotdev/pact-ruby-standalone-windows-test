@@ -6,7 +6,7 @@ build: off
 
 environment:
   GITHUB_ACCESS_TOKEN:
-    secure: 2GfPxgGBKuqQGfnTEuYxqMbS97ohi0o5fxlc70ihcv5ey6FJhVhWCpOrPxlekrbO
+    secure: 5drFLFNj3hmrLLWt385zNdAly6bfTE3nDqLHpmFWfX7XtEVISPek5fwspic32s9i
 
 # appveyor.yml
 install:
