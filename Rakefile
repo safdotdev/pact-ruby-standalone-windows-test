@@ -34,8 +34,9 @@ def download_release_asset url, file_path
 
   faraday = Faraday.new(:url => url, :ssl => {ca_file: 'cacert.pem'}) do |faraday|
     faraday.adapter Faraday.default_adapter
-    faraday.response :logger
-    faraday.filter(/(Authorization: )(.*)/,'\1[REMOVED]')
+    faraday.response :logger do | logger |
+      logger.filter(/(Authorization: )(.*)/,'\1[REMOVED]')
+    end
   end
 
   response = faraday.get do | request |
