@@ -22,7 +22,7 @@ def get_latest_release_asset_url release_asset_name_regexp
   repository_slug = 'pact-foundation/pact-ruby-standalone'
 
   client = Octokit::Client.new(access_token: github_access_token)
-  client.connection_options[:ssl] = { :verify => false } #TEMP!!!
+  client.connection_options[:ssl] = {ca_file: 'cacert.pem'}
   release =  client.latest_release repository_slug
   release_assets = client.release_assets release.url
   zip = release_assets.find { | release_asset | release_asset.name =~ release_asset_name_regexp }
@@ -32,8 +32,7 @@ end
 def download_release_asset url, file_path
   require 'faraday'
 
-  #TEMP!!! Must turn on verification again
-  faraday = Faraday.new(:url => url, :ssl => {verify: false}) do |faraday|
+  faraday = Faraday.new(:url => url, :ssl => {ca_file: 'cacert.pem'}) do |faraday|
     faraday.adapter Faraday.default_adapter
     faraday.response :logger
   end
