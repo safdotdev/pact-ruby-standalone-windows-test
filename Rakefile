@@ -31,18 +31,21 @@ end
 
 def download_release_asset url, file_path
   require 'faraday'
-  require 'faraday_middleware'
 
   #TEMP!!! Must turn on verification again
   faraday = Faraday.new(:url => url, :ssl => {verify: false}) do |faraday|
-    faraday.use FaradayMiddleware::FollowRedirects
     faraday.adapter Faraday.default_adapter
     faraday.response :logger
   end
 
   response = faraday.get do | request |
     request.headers['Accept'] = 'application/octet-stream'
+    request.headers['Authorization'] = "token #{github_access_token}"
   end
+  raise "Expected response status 302 but got #{response.status}" unless response.status == 302
+
+  response = Faraday.get(response.headers['Location'])
+  raise "Error downloading release" unless response.status == 200
 
   puts "Writing file #{file_path}"
   File.open(file_path, "wb") { |file| file << response.body }
