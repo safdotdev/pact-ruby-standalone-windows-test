@@ -1,4 +1,7 @@
-LOCAL_PACKAGE_LOCATION = "tmp/pact.zip"
+require 'openssl'
+
+LOCAL_PACKAGE_LOCATION = "tmp/pact.zip".freeze
+SSL_OPTIONS = {ca_file: 'cacert.pem', cert_store: OpenSSL::X509::Store.new}.freeze
 
 def windows?
   (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
@@ -22,7 +25,7 @@ def get_latest_release_asset_url release_asset_name_regexp
   repository_slug = 'pact-foundation/pact-ruby-standalone'
 
   client = Octokit::Client.new(access_token: github_access_token)
-  client.connection_options[:ssl] = {ca_file: 'cacert.pem'}
+  client.connection_options[:ssl] = SSL_OPTIONS
   release =  client.latest_release repository_slug
   release_assets = client.release_assets release.url
   zip = release_assets.find { | release_asset | release_asset.name =~ release_asset_name_regexp }
@@ -32,7 +35,7 @@ end
 def download_release_asset url, file_path
   require 'faraday'
 
-  faraday = Faraday.new(:url => url, :ssl => {ca_file: 'cacert.pem'}) do |faraday|
+  faraday = Faraday.new(:url => url, :ssl => SSL_OPTIONS) do |faraday|
     faraday.adapter Faraday.default_adapter
     faraday.response :logger do | logger |
       logger.filter(/(Authorization: )(.*)/,'\1[REMOVED]')
