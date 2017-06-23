@@ -1,6 +1,7 @@
 require 'openssl'
 
 LOCAL_PACKAGE_LOCATION = "tmp/pact.zip".freeze
+# Simulate a Windows environment on Mac by giving it an empty cert_store
 SSL_OPTIONS = {ca_file: 'cacert.pem', cert_store: OpenSSL::X509::Store.new}.freeze
 
 def windows?
@@ -48,7 +49,8 @@ def download_release_asset url, file_path
   end
   raise "Expected response status 302 but got #{response.status}" unless response.status == 302
 
-  response = Faraday.get(response.headers['Location'])
+  faraday = Faraday.new(:url => response.headers['Location'], :ssl => SSL_OPTIONS)
+  response = faraday.get
   raise "Error downloading release" unless response.status == 200
 
   puts "Writing file #{file_path}"
