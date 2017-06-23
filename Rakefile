@@ -67,9 +67,6 @@ def unzip_package path
     end
   end
   puts "Finished unzipping #{path}"
-rescue Exception => e
-  puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
-  raise e
 end
 
 def build_process
@@ -105,23 +102,25 @@ def test_executable
   response = Faraday.get("http://localhost:1235", nil, {'X-Pact-Mock-Service' => 'true'})
   puts response.body
   raise "#{response.status} #{response.body}" unless response.status == 200
-rescue Exception => e
-  puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
-  raise e
 ensure
   process.stop if process && process.alive?
 end
 
 desc 'Download latest pact-X.X.X-win32.zip'
 task :download_latest_release do |t, args |
-  puts $stdout.puts "BETHTEST stdout"
-  puts $stderr.puts "BETHTEST stderr"
-  require 'fileutils'
-  FileUtils.rm_rf "tmp"
-  FileUtils.mkdir_p "tmp"
+  begin
+    require 'fileutils'
+    FileUtils.rm_rf "tmp"
+    FileUtils.mkdir_p "tmp"
 
-  url = get_latest_release_asset_url /win.*zip/
-  download_release_asset url, LOCAL_PACKAGE_LOCATION
+    url = get_latest_release_asset_url /win.*zip/
+    download_release_asset url, LOCAL_PACKAGE_LOCATION
+
+  rescue StandardError => e
+    # Appveyor doesn't display stderr in a helpful way, need to manually print error
+    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
+    raise e
+  end
 end
 
 desc 'Unzip package'
@@ -131,7 +130,13 @@ end
 
 desc 'Test windows batch file'
 task :test do
-  test_executable
+  begin
+    test_executable
+  rescue StandardError => e
+    # Appveyor doesn't display stderr in a helpful way, need to manually print error
+    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
+    raise e
+  end
 end
 
 task :default => [:download_latest_release, :unzip_package, :test]
