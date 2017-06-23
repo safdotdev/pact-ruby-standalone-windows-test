@@ -110,6 +110,8 @@ end
 
 desc 'Download latest pact-X.X.X-win32.zip'
 task :download_latest_release do |t, args |
+  puts $stdout.puts "BETHTEST stdout"
+  puts $stderr.puts "BETHTEST stderr"
   require 'fileutils'
   FileUtils.rm_rf "tmp"
   FileUtils.mkdir_p "tmp"
