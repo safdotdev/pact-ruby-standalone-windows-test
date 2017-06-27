@@ -12,6 +12,7 @@ GEM
     octokit (4.7.0)
       sawyer (~> 0.8.0, >= 0.5.3)
     public_suffix (2.0.5)
+    rack (2.0.3)
     rake (12.0.0)
     rubyzip (1.2.1)
     sawyer (0.8.1)
@@ -24,6 +25,7 @@ PLATFORMS
 DEPENDENCIES
   childprocess
   octokit
+  rack
   rake
   rubyzip
 

@@ -71,41 +71,80 @@ def unzip_package path
   puts "Finished unzipping #{path}"
 end
 
-def build_process
+def build_process cmd_parts, cwd = nil
   require 'childprocess'
-
   logger = Logger.new($stdout)
   logger.level = Logger::INFO
   ChildProcess.logger = logger
-  if windows?
-    process = ChildProcess.build("cmd.exe", "/c","pact-mock-service.bat", "service", "-p", "1235")
-    process.cwd = "tmp/pact/bin"
-    process.leader = true # not sure if we need this
-  else
-    # Manually downloaded and extracted, for local testing
-    process = ChildProcess.build("./pact-mock-service", "service", "-p", "1235")
-    process.cwd = "osx/pact/bin"
-  end
-
+  process = ChildProcess.build(*cmd_parts)
+  process.cwd = cwd if cwd
+  process.leader = true if windows? # not sure if we need this
   process.io.inherit!
   process
 end
 
-def test_executable
-  require 'faraday'
+def mock_service_process
+  if windows?
+    build_process ["cmd.exe", "/c","pact-mock-service.bat", "service", "-p", "1235"], "tmp/pact/bin"
+  else
+    # Manually downloaded and extracted, for local testing
+    build_process ["./pact-mock-service", "service", "-p", "1235"], "osx/pact/bin"
+  end
+end
 
-  process = build_process
+def test_provider_process
+  if windows?
+    build_process ["cmd.exe", "/c","bundle", "exec", "rackup", "test/config.ru"]
+  else
+    build_process ["ruby", "-S", "bundle", "exec", "rackup", "-p", "1236", "test/config.ru"]
+  end
+end
 
-  Bundler.with_clean_env do
+def pact_verifier_command
+  suffix = "verify --pact-urls #{File.absolute_path("test/pact.json")} --provider-base-url http://localhost:1236"
+  if windows?
+    "cd tmp/pact/bin && cmd.exe /c pact-verifier.bat #{suffix}"
+  else
+    # Manually downloaded and extracted, for local testing
+    "cd osx/pact/bin && ./pact-provider-verifier #{suffix}"
+  end
+end
+
+def with_process process, clean_env = true
+  if clean_env
+    Bundler.with_clean_env do
+      process.start
+    end
+  else
     process.start
   end
-  sleep 3
-
-  response = Faraday.get("http://localhost:1235", nil, {'X-Pact-Mock-Service' => 'true'})
-  puts response.body
-  raise "#{response.status} #{response.body}" unless response.status == 200
+  yield
 ensure
   process.stop if process && process.alive?
+end
+
+def test_mock_service
+  require 'faraday'
+
+  with_process(mock_service_process) do
+    sleep 2
+    response = Faraday.get("http://localhost:1235", nil, {'X-Pact-Mock-Service' => 'true'})
+    puts response.body
+    raise "#{response.status} #{response.body}" unless response.status == 200
+  end
+end
+
+def test_verifier
+  require 'faraday'
+  with_process(test_provider_process, false) do
+    sleep 2
+
+    Bundler.with_clean_env do
+      output = `#{pact_verifier_command}`
+    puts output
+    raise "pact-provider-verifier did not run as expected" unless output.include?("1 interaction, 0 failures")
+    end
+  end
 end
 
 desc 'Download latest pact-X.X.X-win32.zip'
@@ -131,9 +170,9 @@ task :unzip_package do
 end
 
 desc 'Test windows batch file'
-task :test do
+task :test_mock_service do
   begin
-    test_executable
+    test_mock_service
   rescue StandardError => e
     # Appveyor doesn't display stderr in a helpful way, need to manually print error
     puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
@@ -141,4 +180,16 @@ task :test do
   end
 end
 
+desc 'Test windows pact verifier batch file'
+task :test_verifier do
+  begin
+    test_verifier
+  rescue StandardError => e
+    # Appveyor doesn't display stderr in a helpful way, need to manually print error
+    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
+    raise e
+  end
+end
+
+task :test => [:test_mock_service, :test_verifier]
 task :default => [:download_latest_release, :unzip_package, :test]

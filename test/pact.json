@@ -1,0 +1,20 @@
+{
+  "consumer": {"name": "Test consumer"},
+  "provider": {"name": "Test provider"},
+  "interactions" : [
+    {
+      "description": "A test request",
+      "providerState": null,
+      "request": {
+        "method": "GET",
+        "path" : "/",
+        "headers": {}
+      },
+      "response": {
+        "status": 200,
+        "headers": {"Content-Type": "text/plain"},
+        "body": "Hello world"
+      }
+    }
+  ]
+}
