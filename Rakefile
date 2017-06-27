@@ -17,6 +17,7 @@ def get_latest_release_asset_url release_asset_name_regexp
   stack = Faraday::RackBuilder.new do |builder|
     builder.response :logger do | logger |
       logger.filter(/(Authorization: )(.*)/,'\1[REMOVED]')
+      def logger.debug *args; end
     end
     builder.use Octokit::Response::RaiseError
     builder.adapter Faraday.default_adapter
@@ -40,6 +41,7 @@ def download_release_asset url, file_path
     faraday.adapter Faraday.default_adapter
     faraday.response :logger do | logger |
       logger.filter(/(Authorization: )(.*)/,'\1[REMOVED]')
+      def logger.debug *args; end
     end
   end
 
@@ -172,6 +174,7 @@ end
 desc 'Test windows batch file'
 task :test_mock_service do
   begin
+    puts "Testing pact-mock-service"
     test_mock_service
   rescue StandardError => e
     # Appveyor doesn't display stderr in a helpful way, need to manually print error
@@ -183,6 +186,7 @@ end
 desc 'Test windows pact verifier batch file'
 task :test_verifier do
   begin
+    puts "Testing pact-provider-verifier"
     test_verifier
   rescue StandardError => e
     # Appveyor doesn't display stderr in a helpful way, need to manually print error
