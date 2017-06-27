@@ -191,5 +191,5 @@ task :test_verifier do
   end
 end
 
-task :test => [:test_mock_service] # :test_verifier disabled for now, don't have time to debug why it isn't working
+task :test => [:test_mock_service, :test_verifier] # :test_verifier disabled for now, don't have time to debug why it isn't working
 task :default => [:download_latest_release, :unzip_package, :test]
