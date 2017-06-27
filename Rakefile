@@ -103,7 +103,7 @@ end
 def pact_verifier_command
   suffix = "verify --pact-urls #{File.absolute_path("test/pact.json")} --provider-base-url http://localhost:1236"
   if windows?
-    "cd tmp/pact/bin && cmd.exe /c pact-verifier.bat #{suffix}"
+    "cd tmp/pact/bin && cmd.exe /c pact-provider-verifier.bat #{suffix}"
   else
     # Manually downloaded and extracted, for local testing
     "cd osx/pact/bin && ./pact-provider-verifier #{suffix}"
