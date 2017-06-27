@@ -94,7 +94,7 @@ end
 
 def test_provider_process
   if windows?
-    build_process ["cmd.exe", "/c","bundle", "exec", "rackup", "test/config.ru"]
+    build_process ["cmd.exe", "/c","bundle", "exec", "rackup", "-p", "1236", "test/config.ru"]
   else
     build_process ["ruby", "-S", "bundle", "exec", "rackup", "-p", "1236", "test/config.ru"]
   end
