@@ -108,7 +108,27 @@ def pact_verifier_command
     "cd tmp/pact/bin && cmd.exe /c pact-provider-verifier.bat #{suffix}"
   else
     # Manually downloaded and extracted, for local testing
-    "cd osx/pact/bin && ./pact-provider-verifier #{suffix}"
+    "cd osx/pact.old/bin && ./pact-provider-verifier #{suffix}"
+  end
+end
+
+def mock_service_start_command port
+  suffix = "start -p #{port}"
+  if windows?
+    "cd tmp/pact/bin && cmd.exe /c pact-mock-service.bat #{suffix}"
+  else
+    # Manually downloaded and extracted, for local testing
+    "cd osx/pact/bin && ./pact-mock-service #{suffix}"
+  end
+end
+
+def mock_service_stop_command port
+  suffix = "stop -p #{port}"
+  if windows?
+    "cd tmp/pact/bin && cmd.exe /c pact-mock-service.bat #{suffix}"
+  else
+    # Manually downloaded and extracted, for local testing
+    "cd osx/pact/bin && ./pact-mock-service #{suffix}"
   end
 end
 
@@ -130,9 +150,24 @@ def test_mock_service
 
   with_process(mock_service_process) do
     sleep 2
-    response = Faraday.get("http://localhost:1235", nil, {'X-Pact-Mock-Service' => 'true'})
-    puts response.body
-    raise "#{response.status} #{response.body}" unless response.status == 200
+    make_http_request_to_mock_service 1235
+  end
+end
+
+def test_mock_service_start_and_stop
+  require 'faraday'
+
+  Bundler.with_clean_env do
+    echo_and_execute "pwd"
+    echo_and_execute(mock_service_start_command(1237))
+  puts "blah"
+  end
+
+
+  make_http_request_to_mock_service(1237)
+
+  Bundler.with_clean_env do
+    echo_and_execute(mock_service_stop_command(1237))
   end
 end
 
@@ -142,11 +177,22 @@ def test_verifier
     sleep 2
 
     Bundler.with_clean_env do
-      output = `#{pact_verifier_command}`
-    puts output
-    raise "pact-provider-verifier did not run as expected" unless output.include?("1 interaction, 0 failures")
+      output = echo_and_execute(pact_verifier_command)
+      raise "pact-provider-verifier did not run as expected" unless output.include?("1 interaction, 0 failures")
     end
   end
+end
+
+def make_http_request_to_mock_service port
+  require 'faraday'
+  response = Faraday.get("http://localhost:#{port}", nil, {'X-Pact-Mock-Service' => 'true'})
+  puts response.body
+  raise "#{response.status} #{response.body}" unless response.status == 200
+end
+
+def echo_and_execute command
+  puts command
+  `#{command}`.tap{ | output | puts output}
 end
 
 desc 'Download latest pact-X.X.X-win32.zip'
@@ -176,6 +222,18 @@ task :test_mock_service do
   begin
     puts "Testing pact-mock-service"
     test_mock_service
+  rescue StandardError => e
+    # Appveyor doesn't display stderr in a helpful way, need to manually print error
+    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
+    raise e
+  end
+end
+
+desc 'Test windows batch file'
+task :test_mock_service_start_and_stop do
+  begin
+    puts "Testing pact-mock-service start and stop"
+    test_mock_service_start_and_stop
   rescue StandardError => e
     # Appveyor doesn't display stderr in a helpful way, need to manually print error
     puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
