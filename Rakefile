@@ -125,8 +125,8 @@ ensure
   process.stop if process && process.alive?
 end
 
-def expect_successful_request http_method, url, body = nil, headers = {}
-  response = Faraday.send(http_method, url, body, headers)
+def expect_successful_request faraday, http_method, path, body = nil, headers = {}
+  response = faraday.send(http_method, path, body, headers)
   raise "#{response.status} #{response.body}" unless response.status == 200
   response
 end
@@ -136,16 +136,23 @@ def test_mock_service
   require 'json'
 
   with_process(mock_service_process) do
-    sleep 2
+    sleep 5
     admin_header = {'X-Pact-Mock-Service' => 'true'}
     pact_details = {consumer: {name: 'Foo'}, provider: {name: 'bar'}, pact_dir: './pacts'}
     interaction = {description: "test", providerState: nil, request: {method: 'GET', path: '/test'}, response: {status: 200} }
 
-    expect_successful_request(:get, "http://localhost:1235", nil, admin_header)
-    expect_successful_request(:post, "http://localhost:1235/interactions", interaction.to_json, {'X-Pact-Mock-Service' => 'true', 'Content-Type' => 'application/json'})
-    expect_successful_request(:get, "http://localhost:1235/test")
-    expect_successful_request(:get, "http://localhost:1235/interactions/verification", nil, admin_header)
-    expect_successful_request(:post, "http://localhost:1235/pact", pact_details.to_json, admin_header)
+    faraday = Faraday.new(:url => "http://localhost:1235") do |faraday|
+      faraday.adapter Faraday.default_adapter
+      faraday.response :logger do | logger |
+        def logger.debug *args; end
+      end
+    end
+
+    expect_successful_request(faraday, :get,  "/", nil, admin_header)
+    expect_successful_request(faraday, :post, "/interactions", interaction.to_json, {'X-Pact-Mock-Service' => 'true', 'Content-Type' => 'application/json'})
+    expect_successful_request(faraday, :get,  "/test")
+    expect_successful_request(faraday, :get,  "/interactions/verification", nil, admin_header)
+    expect_successful_request(faraday, :post, "/pact", pact_details.to_json, admin_header)
   end
 end
 
