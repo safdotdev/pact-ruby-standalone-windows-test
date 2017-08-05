@@ -125,14 +125,27 @@ ensure
   process.stop if process && process.alive?
 end
 
+def expect_successful_request http_method, url, body = nil, headers = {}
+  response = Faraday.send(http_method, url, body, headers)
+  raise "#{response.status} #{response.body}" unless response.status == 200
+  response
+end
+
 def test_mock_service
   require 'faraday'
+  require 'json'
 
   with_process(mock_service_process) do
     sleep 2
-    response = Faraday.get("http://localhost:1235", nil, {'X-Pact-Mock-Service' => 'true'})
-    puts response.body
-    raise "#{response.status} #{response.body}" unless response.status == 200
+    admin_header = {'X-Pact-Mock-Service' => 'true'}
+    pact_details = {consumer: {name: 'Foo'}, provider: {name: 'bar'}, pact_dir: './pacts'}
+    interaction = {description: "test", providerState: nil, request: {method: 'GET', path: '/test'}, response: {status: 200} }
+
+    expect_successful_request(:get, "http://localhost:1235", nil, admin_header)
+    expect_successful_request(:post, "http://localhost:1235/interactions", interaction.to_json, {'X-Pact-Mock-Service' => 'true', 'Content-Type' => 'application/json'})
+    expect_successful_request(:get, "http://localhost:1235/test")
+    expect_successful_request(:get, "http://localhost:1235/interactions/verification", nil, admin_header)
+    expect_successful_request(:post, "http://localhost:1235/pact", pact_details.to_json, admin_header)
   end
 end
 
