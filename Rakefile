@@ -103,7 +103,7 @@ def test_provider_process
 end
 
 def pact_verifier_command
-  suffix = "verify --pact-urls #{File.absolute_path("test/pact.json")} --provider-base-url http://localhost:1236"
+  suffix = "verify #{File.absolute_path("test/pact.json")} --provider-base-url http://localhost:1236"
   if windows?
     "cd tmp/pact/bin && cmd.exe /c pact-provider-verifier.bat #{suffix}"
   else
