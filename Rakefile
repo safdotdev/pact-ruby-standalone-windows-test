@@ -138,7 +138,7 @@ def test_mock_service
   with_process(mock_service_process) do
     sleep 5
     admin_header = {'X-Pact-Mock-Service' => 'true'}
-    pact_details = {consumer: {name: 'Foo'}, provider: {name: 'bar'}, pact_dir: './pacts'}
+    pact_details = {consumer: {name: 'Foo'}, provider: {name: 'bar'}, pact_dir: '.\pacts'}
     interaction = {description: "test", providerState: nil, request: {method: 'GET', path: '/test'}, response: {status: 200} }
 
     faraday = Faraday.new(:url => "http://localhost:1235") do |faraday|
