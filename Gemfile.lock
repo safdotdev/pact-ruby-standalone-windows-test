@@ -37,12 +37,12 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  childprocess
-  octokit
-  rack
-  rake
-  rspec
-  rubyzip
+  childprocess (~> 0.7)
+  octokit (~> 4.7)
+  rack (~> 2.0)
+  rake (~> 12.0)
+  rspec (~> 3.7)
+  rubyzip (~> 1.2)
 
 BUNDLED WITH
    1.15.4

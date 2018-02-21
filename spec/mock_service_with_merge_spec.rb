@@ -1,8 +1,9 @@
 require 'faraday'
 require 'json'
-RSpec.describe "running the mock service with the pact-file-mode merge" do
 
-  PACT_FILE_PATH = "./pacts/foo-bar.json"
+RSpec.describe "Running the mock service with --pact-file-mode merge" do
+
+  let(:pact_file_path) { "./pacts/foo-bar.json" }
 
   let(:faraday) do
     Faraday.new(:url => "http://localhost:1235") do |faraday|
@@ -38,11 +39,11 @@ RSpec.describe "running the mock service with the pact-file-mode merge" do
   end
 
   let(:pact_hash) do
-    JSON.parse(File.read(PACT_FILE_PATH), symbolize_names: true)
+    JSON.parse(File.read(pact_file_path), symbolize_names: true)
   end
 
   it "creates a file when one does not already exist" do
-    FileUtils.rm_rf PACT_FILE_PATH
+    FileUtils.rm_rf pact_file_path
     with_process(mock_service_process(mock_service_options)) do
       wait_for_mock_service_to_start(faraday, admin_header)
       expect_successful_request(faraday, :get,  "/", nil, admin_header)
@@ -50,7 +51,7 @@ RSpec.describe "running the mock service with the pact-file-mode merge" do
       expect_successful_request(faraday, :get,  "/test")
       expect_successful_request(faraday, :get,  "/interactions/verification", nil, admin_header)
       expect_successful_request(faraday, :post, "/pact", pact_details.to_json, admin_header)
-      expect(File.exists?(PACT_FILE_PATH))
+      expect(File.exists?(pact_file_path))
     end
   end
 
