@@ -1,9 +1,5 @@
 require 'openssl'
 
-require 'rspec/core/rake_task'
-
-RSpec::Core::RakeTask.new(:spec)
-
 LOCAL_PACKAGE_LOCATION = "tmp/pact.zip".freeze
 # Simulate a Windows environment on Mac by giving it an empty cert_store
 SSL_OPTIONS = {ca_file: 'cacert.pem', cert_store: OpenSSL::X509::Store.new}.freeze
@@ -89,12 +85,14 @@ def build_process cmd_parts, cwd = nil
   process
 end
 
-def mock_service_process
+def mock_service_process options = {}
+  port = options[:port] || "1235"
+  cli_args = options[:cli_args] || []
   if windows?
-    build_process ["cmd.exe", "/c","pact-mock-service.bat", "service", "-p", "1235"], "tmp/pact/bin"
+    build_process ["cmd.exe", "/c","pact-mock-service.bat", "service", "-p", port] + cli_args, "tmp/pact/bin"
   else
     # Manually downloaded and extracted, for local testing
-    build_process ["./pact-mock-service", "service", "-p", "1235"], "osx/pact/bin"
+    build_process ["./pact-mock-service", "service", "-p", port] + cli_args, "osx/pact/bin"
   end
 end
 
@@ -173,51 +171,17 @@ def test_verifier
   end
 end
 
-desc 'Download latest pact-X.X.X-win32.zip'
-task :download_latest_release do |t, args |
-  begin
-    require 'fileutils'
-    FileUtils.rm_rf "tmp"
-    FileUtils.mkdir_p "tmp"
-
-    url = get_latest_release_asset_url /win.*zip/
-    download_release_asset url, LOCAL_PACKAGE_LOCATION
-
-  rescue StandardError => e
-    # Appveyor doesn't display stderr in a helpful way, need to manually print error
-    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
-    raise e
+def wait_for_mock_service_to_start faraday, admin_headers
+  i = 0
+  while true
+    begin
+      faraday.get("/", nil, admin_headers)
+      return true
+    rescue Faraday::ConnectionFailed => e
+      i += 1
+      sleep 1
+      retry if i < 15
+      raise e
+    end
   end
 end
-
-desc 'Unzip package'
-task :unzip_package do
-  unzip_package LOCAL_PACKAGE_LOCATION
-end
-
-desc 'Test windows batch file'
-task :test_mock_service do
-  begin
-    puts "Testing pact-mock-service"
-    test_mock_service
-  rescue StandardError => e
-    # Appveyor doesn't display stderr in a helpful way, need to manually print error
-    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
-    raise e
-  end
-end
-
-desc 'Test windows pact verifier batch file'
-task :test_verifier do
-  begin
-    puts "Testing pact-provider-verifier"
-    test_verifier
-  rescue StandardError => e
-    # Appveyor doesn't display stderr in a helpful way, need to manually print error
-    puts "#{e.class} #{e.message} #{e.backtrace.join("\n")}"
-    raise e
-  end
-end
-
-task :test => [:test_mock_service, :test_verifier] # :test_verifier disabled for now, don't have time to debug why it isn't working
-task :default => [:download_latest_release, :unzip_package, :test]
