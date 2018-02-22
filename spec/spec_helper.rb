@@ -1,5 +1,5 @@
 require "bundler/setup"
-require "support/stuff"
+require "support/test_helpers"
 
 RSpec.configure do |config|
   config.example_status_persistence_file_path = ".rspec_status"
