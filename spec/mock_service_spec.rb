@@ -1,7 +1,7 @@
 require 'faraday'
 require 'json'
 
-RSpec.describe "Running the mock service with --pact-file-mode merge" do
+RSpec.describe "Running the mock service" do
 
   let(:pact_file_path) { "./pacts/wiffle-bar.json" }
   let(:port) { "1236" }
