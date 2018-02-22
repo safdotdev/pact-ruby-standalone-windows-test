@@ -2,6 +2,7 @@ module Pact
   class ConsumerContractWriter
 
     def windows?
+      puts "RUBY_PLATFORM  = #{RUBY_PLATFORM}"
       !!RUBY_PLATFORM =~ /mswin|mingw|bccwin|wince|emx/
     end
 
