@@ -15,7 +15,7 @@ RSpec.describe "Running the mock service with --pact-file-mode merge" do
   end
 
   let(:mock_service_options) do
-    { cli_args: ['--pact-file-write-mode', 'merge'] }
+    { cli_args: ['--pact-file-write-mode', 'merge', '--monkeypatch', File.absolute_path('spec/support/monkeypatch.rb')] }
   end
 
   let(:first_interaction) do
