@@ -4,9 +4,10 @@ require 'json'
 RSpec.describe "Running the mock service with --pact-file-mode merge" do
 
   let(:pact_file_path) { "./pacts/foo-bar.json" }
+  let(:port) { "1235"}
 
   let(:faraday) do
-    Faraday.new(:url => "http://localhost:1235") do |faraday|
+    Faraday.new(:url => "http://localhost:#{port}") do |faraday|
       faraday.adapter Faraday.default_adapter
       faraday.response :logger do | logger |
         def logger.debug *args; end
@@ -15,7 +16,7 @@ RSpec.describe "Running the mock service with --pact-file-mode merge" do
   end
 
   let(:mock_service_options) do
-    { cli_args: ['--pact-file-write-mode', 'merge', '--monkeypatch', File.absolute_path('spec/support/monkeypatch.rb')] }
+    { port: port, cli_args: ['--pact-file-write-mode', 'merge', '--monkeypatch', File.absolute_path('spec/support/monkeypatch.rb')] }
   end
 
   let(:first_interaction) do
