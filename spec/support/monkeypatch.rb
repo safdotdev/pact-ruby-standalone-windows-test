@@ -2,8 +2,7 @@ module Pact
   class ConsumerContractWriter
 
     def windows?
-      puts "RUBY_PLATFORM  = #{RUBY_PLATFORM}"
-      !!RUBY_PLATFORM =~ /mswin|mingw|bccwin|wince|emx/
+      (RUBY_PLATFORM =~ /mswin|mingw|bccwin|wince|emx/) != nil
     end
 
     def with_lockfile pactfile_path
