@@ -5,7 +5,8 @@ RSpec.describe "testing locking" do
     FileUtils.rm_rf "foo"
     File.open("foo", "w") { |file| file << "content" }
     Filelock("foo") do | file |
-      expect(File.read("foo")).to eq "content"
+      file.rewind
+      expect(file.read).to eq "content"
     end
   end
 end
