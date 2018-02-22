@@ -9,6 +9,7 @@ GEM
     faraday (0.12.1)
       multipart-post (>= 1.2, < 3)
     ffi (1.9.18)
+    filelock (1.1.1)
     multipart-post (2.0.0)
     octokit (4.7.0)
       sawyer (~> 0.8.0, >= 0.5.3)
@@ -38,6 +39,7 @@ PLATFORMS
 
 DEPENDENCIES
   childprocess (~> 0.7)
+  filelock
   octokit (~> 4.7)
   rack (~> 2.0)
   rake (~> 12.0)
