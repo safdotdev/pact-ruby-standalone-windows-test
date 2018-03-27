@@ -20,3 +20,8 @@ before_test:
 
 test_script:
   - bundle exec rake
+
+notifications:
+  - provider: Slack
+    incoming_webhook:
+      secure: zUujuzaZFqpFndOFkoIMkXMFTniWWi0ZtR58PN63c7+KijEb2IMFDPvSMPeIpx/nWQTOLxA/dxX0fSyBjY33TnYtujPTO/bNzER3cppwyX0=
