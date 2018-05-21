@@ -31,6 +31,17 @@ module Pact
         end
       end
 
+      def stub_service_process pact_path, options = {}
+        port = options[:port] || "1236"
+        cli_args = options[:cli_args] || []
+        if windows?
+          build_process ["cmd.exe", "/c","pact-stub-service.bat", pact_path, "-p", port] + cli_args, "tmp/pact/bin"
+        else
+          # Manually downloaded and extracted, for local testing
+          build_process ["./pact-stub-service", pact_path, "-p", port] + cli_args, "osx/pact/bin"
+        end
+      end
+
       def test_provider_process
         if windows?
           build_process ["cmd.exe", "/c","bundle", "exec", "rackup", "-p", "1236", "test/config.ru"]
