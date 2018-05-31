@@ -19,7 +19,16 @@ RSpec.describe "Running the stub service" do
     { port: port }
   end
 
-  it "starts up the stub service with the specified pact file" do
+  it "starts up the stub service with the specified pact file when backslashes are used in the path" do
+    with_process(stub_service_process(pact_file_path, stub_service_options)) do
+      wait_for_mock_service_to_start(faraday, {})
+      expect_successful_request(faraday, :get,  "/")
+    end
+  end
+
+  it "starts up the stub service with the specified pact file when there is a space in the path" do
+    let(:pact_file_path) { File.absolute_path("spec/support/directory with spaces/pact.json") }
+
     with_process(stub_service_process(pact_file_path, stub_service_options)) do
       wait_for_mock_service_to_start(faraday, {})
       expect_successful_request(faraday, :get,  "/")
