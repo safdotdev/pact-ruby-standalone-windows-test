@@ -14,7 +14,7 @@ GEM
     octokit (4.7.0)
       sawyer (~> 0.8.0, >= 0.5.3)
     public_suffix (2.0.5)
-    rack (2.0.3)
+    rack (2.0.6)
     rake (12.0.0)
     rspec (3.7.0)
       rspec-core (~> 3.7.0)
@@ -41,10 +41,10 @@ DEPENDENCIES
   childprocess (~> 0.7)
   filelock
   octokit (~> 4.7)
-  rack (~> 2.0)
+  rack (~> 2.0, >= 2.0.6)
   rake (~> 12.0)
   rspec (~> 3.7)
   rubyzip (~> 1.2)
 
 BUNDLED WITH
-   1.15.4
+   1.16.6
