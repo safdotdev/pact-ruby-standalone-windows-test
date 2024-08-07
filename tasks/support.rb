@@ -14,7 +14,7 @@ module Pact
         ENV.fetch('GITHUB_ACCESS_TOKEN')
       end
 
-      def download_latest_release pattern = /win.*zip/
+      def download_latest_release pattern = /windows-x86_64.*zip/
         begin
           require 'fileutils'
           FileUtils.rm_rf "tmp"
@@ -44,7 +44,7 @@ module Pact
 
         repository_slug = 'pact-foundation/pact-ruby-standalone'
 
-        client = Octokit::Client.new(access_token: github_access_token)
+        client = Octokit::Client.new()
         client.connection_options[:ssl] = SSL_OPTIONS
         release =  client.latest_release repository_slug
         release_assets = client.release_assets release.url
@@ -65,7 +65,7 @@ module Pact
 
         response = faraday.get do | request |
           request.headers['Accept'] = 'application/octet-stream'
-          request.headers['Authorization'] = "token #{github_access_token}"
+          # request.headers['Authorization'] = "token #{github_access_token}"
         end
         raise "Expected response status 302 but got #{response.status}" unless response.status == 302
 
