@@ -62,7 +62,7 @@ module Pact
 
       def with_process process, clean_env = true
         if clean_env
-          Bundler.with_clean_env do
+          Bundler.with_unbundled_env do
             process.start
           end
         else

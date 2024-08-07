@@ -5,7 +5,7 @@ RSpec.describe "The pact provider verifier" do
     with_process(test_provider_process, false) do
       sleep 2
 
-      Bundler.with_clean_env do
+      Bundler.with_unbundled_env do
         output = `#{pact_verifier_command}`
         puts output
         expect(output).to include "1 interaction, 0 failures"
