@@ -1,0 +1,19 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby_version: ["3.3"]
+        os: ["windows-latest"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@master
+        with:
+          ruby-version: ${{ matrix.ruby_version }}
+      - run: "bundle install"
+      - run: "bundle exec rake"
